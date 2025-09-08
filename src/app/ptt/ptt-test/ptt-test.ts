@@ -1,7 +1,7 @@
 import {Component, OnDestroy, inject, signal} from "@angular/core";
 import {CommonModule} from "@angular/common";
 
-import {takeUntil} from "rxjs/operators";
+
 import {Subject} from "rxjs";
 import {AbsWebSocket} from "../services/websocket/Abs-Ws";
 import {BrowserWebSocket} from "../services/websocket/browser-websocket";
