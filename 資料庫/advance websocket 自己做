@@ -1,0 +1,216 @@
+好，我幫你設計一個 Capacitor Plugin 範例，可以在 Android / iOS 原生自訂 Header，然後讓 Angular 呼叫。這樣你就能在 Capacitor App 裡用 WebSocket + Header。
+
+-------
+📌 專案結構
+my-app/
+ ├─ src/ (Angular)
+ ├─ android/
+ ├─ ios/
+ ├─ capacitor.config.ts
+ └─ websocket-plugin/
+     ├─ android/
+     │   └─ WebSocketPlugin.kt
+     ├─ ios/
+     │   └─ WebSocketPlugin.swift
+     └─ src/
+         └─ definitions.ts
+         └─ index.ts
+
+1️⃣ 建立 Capacitor Plugin
+
+在專案根目錄執行：
+
+npx @capacitor/cli plugin:generate
+
+
+輸入：
+
+Plugin Name: WebSocketPlugin
+
+Package: com.example.websocket
+
+Language: Kotlin (Android), Swift (iOS)
+
+2️⃣ Android (Kotlin, 用 OkHttp)
+
+android/src/main/java/com/example/websocket/WebSocketPlugin.kt
+
+package com.example.websocket
+
+import android.util.Log
+import com.getcapacitor.*
+import com.getcapacitor.annotation.CapacitorPlugin
+import com.getcapacitor.annotation.PluginMethod
+import okhttp3.*
+
+@CapacitorPlugin(name = "WebSocketPlugin")
+class WebSocketPlugin : Plugin() {
+    private var webSocket: WebSocket? = null
+
+    @PluginMethod
+    fun connect(call: PluginCall) {
+        val url = call.getString("url") ?: return call.reject("URL required")
+        val headers = call.getObject("headers") ?: JSObject()
+
+        val client = OkHttpClient()
+        val requestBuilder = Request.Builder().url(url)
+
+        headers.keys().forEach { key ->
+            requestBuilder.addHeader(key, headers.getString(key))
+        }
+
+        val request = requestBuilder.build()
+        webSocket = client.newWebSocket(request, object : WebSocketListener() {
+            override fun onOpen(ws: WebSocket, response: Response) {
+                notifyListeners("open", JSObject())
+            }
+
+            override fun onMessage(ws: WebSocket, text: String) {
+                val data = JSObject()
+                data.put("message", text)
+                notifyListeners("message", data)
+            }
+
+            override fun onFailure(ws: WebSocket, t: Throwable, r: Response?) {
+                val err = JSObject()
+                err.put("error", t.localizedMessage)
+                notifyListeners("error", err)
+            }
+        })
+
+        call.resolve()
+    }
+
+    @PluginMethod
+    fun send(call: PluginCall) {
+        val msg = call.getString("message") ?: ""
+        webSocket?.send(msg)
+        call.resolve()
+    }
+
+    @PluginMethod
+    fun close(call: PluginCall) {
+        webSocket?.close(1000, "Closed by client")
+        call.resolve()
+    }
+}
+
+3️⃣ iOS (Swift, 用 Starscream)
+
+先在 ios/Podfile 加入：
+
+pod 'Starscream', '~> 4.0.4'
+
+
+再 cd ios && pod install
+
+ios/Plugin/WebSocketPlugin.swift
+
+import Foundation
+import Capacitor
+import Starscream
+
+@objc(WebSocketPlugin)
+public class WebSocketPlugin: CAPPlugin {
+    var socket: WebSocket?
+
+    @objc func connect(_ call: CAPPluginCall) {
+        guard let urlString = call.getString("url"),
+              let url = URL(string: urlString) else {
+            call.reject("URL required")
+            return
+        }
+
+        var request = URLRequest(url: url)
+        if let headers = call.getObject("headers") {
+            for (key, value) in headers {
+                request.setValue(value as? String, forHTTPHeaderField: key)
+            }
+        }
+
+        socket = WebSocket(request: request)
+
+        socket?.onEvent = { event in
+            switch event {
+            case .connected(_):
+                self.notifyListeners("open", data: [:])
+            case .text(let text):
+                self.notifyListeners("message", data: ["message": text])
+            case .error(let error):
+                self.notifyListeners("error", data: ["error": error?.localizedDescription ?? "Unknown"])
+            default:
+                break
+            }
+        }
+
+        socket?.connect()
+        call.resolve()
+    }
+
+    @objc func send(_ call: CAPPluginCall) {
+        let msg = call.getString("message") ?? ""
+        socket?.write(string: msg)
+        call.resolve()
+    }
+
+    @objc func close(_ call: CAPPluginCall) {
+        socket?.disconnect()
+        call.resolve()
+    }
+}
+
+4️⃣ TypeScript 定義 (websocket-plugin/src/definitions.ts)
+export interface WebSocketPlugin {
+  connect(options: { url: string; headers?: Record<string, string> }): Promise<void>;
+  send(options: { message: string }): Promise<void>;
+  close(): Promise<void>;
+  addListener(
+    eventName: "open" | "message" | "error",
+    listenerFunc: (data: any) => void
+  ): Promise<PluginListenerHandle>;
+}
+
+5️⃣ 在 Angular 端使用
+import { Plugins } from '@capacitor/core';
+const { WebSocketPlugin } = Plugins;
+
+async function startWS() {
+  await WebSocketPlugin.connect({
+    url: "wss://example.com/socket",
+    headers: {
+      Authorization: "Bearer 123456",
+      "X-Custom": "Hello"
+    }
+  });
+
+  WebSocketPlugin.addListener("open", () => console.log("Connected"));
+  WebSocketPlugin.addListener("message", (data) => console.log("Message:", data.message));
+  WebSocketPlugin.addListener("error", (err) => console.error("Error:", err));
+
+  await WebSocketPlugin.send({ message: "Hello from Capacitor" });
+}
+
+
+✅ 這樣就完成了：
+
+Angular 呼叫 Capacitor Plugin
+
+Android / iOS 原生 WebSocket 支援自訂 Header
+
+API 跟瀏覽器的 WebSocket 類似，學習成本低
+
+要不要我幫你再加一個「Web fallback (直接用原生 WebSocket)」，這樣你在 瀏覽器跑 Angular時也能測試？
+
+------
+capacitor, 有沒有 websocket 可以自訂 header 的
+https://chatgpt.com/s/t_68add14107408191a425d2b01f1f8323
+-----------------
+好，我幫你設計一個 Capacitor Plugin 範例，可以在 Android / iOS 原生自訂 Header，然後讓 Angular 呼叫。這樣你就能在 Capacitor App 裡用 WebSocket + Header。
+https://chatgpt.com/s/t_68add17024248191bf4fadc0c6a13d6b
+----------
+要不要我幫你再加一個「Web fallback (直接用原生 WebSocket)」，這樣你在 瀏覽器跑 Angular時也能測試？
+https://chatgpt.com/s/t_68add18f3b508191ab6cd1e6c8ce373d
+-----------
+好 👍 那我幫你包成 Angular Service，你就可以在任何 Component 裡直接用 this.wsService.connect()、this.wsService.send()。
+https://chatgpt.com/s/t_68add1ad60208191bbe79d939ca12287
+-----------
