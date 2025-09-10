@@ -42,6 +42,10 @@ export class BrowserWebSocket extends AbsWebSocket
       this.statusSubject.next({status: wsStatus.CONNECTING});
       try
       {
+        // this.url = 'wss://echo.websocket.org';
+        //  this.url = 'http://localhost:3003'; // 直接送，沒透過 proxy
+        console.log(`錯了嗎:${this.url}`);
+
         this.socket = new WebSocket(this.url);
         this.socket.onopen = (event) =>
         {
@@ -96,23 +100,7 @@ export class BrowserWebSocket extends AbsWebSocket
     });
   }
 
-  // async connectxxx(): Promise<void>
-  // {
-  //   if (this.socket && this.socket.readyState !== WebSocket.CLOSED)
-  //   {
-  //     console.warn("WebSocket is already connected or connecting.");
-  //     return;
-  //   }
-  //   console.log(`socket url: ${this.url}`);
-  //   this.socket = new WebSocket(this.url);
-  //   this.socket.binaryType = "arraybuffer";
-  //   this.socket.onopen = (ev) => this.onOpen(ev);
-  //   this.socket.onmessage = (ev) => this.onMessage(ev);
-  //   this.socket.onclose = (ev) => this.onClose(ev);
-  //   this.socket.onerror = (ev) => this.onError(ev);
-  // }
-
-  send(data: string | ArrayBufferLike | Blob | ArrayBufferView): void
+  sendArrayBuffer(data: ArrayBuffer): void | Promise<void>
   {
     if (this.statusSubject.getValue().status !== wsStatus.OPEN || !this.socket)
     {

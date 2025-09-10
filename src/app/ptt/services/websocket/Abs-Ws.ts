@@ -18,7 +18,8 @@ export interface wsInfo
   reason?: string;  // 只在 onclose 會有
   explain?: string;
 }
-@Injectable({ providedIn: 'root' })
+
+@Injectable({providedIn: "root"})
 export abstract class AbsWebSocket implements OnDestroy
 {
   ngOnDestroy(): void
@@ -30,10 +31,9 @@ export abstract class AbsWebSocket implements OnDestroy
   public statusSubject$: Observable<wsInfo> = this.statusSubject.asObservable();
 
   // abstract get termConfig(): any;
-
   abstract connect(): Promise<wsInfo>;
 
-  abstract send(data: string | ArrayBufferLike | Blob | ArrayBufferView): void | Promise<void>;
+  abstract sendArrayBuffer(data: ArrayBuffer): void | Promise<void>;
 
   abstract close(code?: number, reason?: string): void | Promise<void>;
 
@@ -41,6 +41,18 @@ export abstract class AbsWebSocket implements OnDestroy
   abstract onClose: (event: CloseEvent) => void;
   abstract onError: (event: Event) => void; // browser 要做的
   abstract onMessage: (event: { data: any }) => void; // 商業邏輯
+  public send(str: string)
+  {
+    const chunkSize = 3;
+    for (let i = 0; i < str.length; i += chunkSize)
+    {
+      const chunkStr = str.substring(i, i + chunkSize);
+      const byteArray = new Uint8Array(
+              Array.from(chunkStr, ch => ch.charCodeAt(0))
+      );
+      this.sendArrayBuffer(byteArray.buffer); // abcdef 分批送 abc, def
+    }
+  }
 }
 
 /**

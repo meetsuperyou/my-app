@@ -1,5 +1,5 @@
 const PROXY_CONFIG = {
-	"/local": {
+	"/pureWsServer": {
 		target: `ws://localhost:3002`,
 		secure: true,
 		ws: true,
@@ -7,6 +7,15 @@ const PROXY_CONFIG = {
 		headers: {
 			"origin": "localServer",
 			"myheader": "my-app-"
+		},
+	},
+	"/wsProxyServer": {
+		target: `ws://localhost:3003`,
+		secure: true,
+		ws: true,
+		changeOrigin: true,
+		headers: {
+			"myheader": "my-app-proxy"
 		},
 	},
 	"/server1": {

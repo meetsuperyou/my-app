@@ -41,10 +41,10 @@ wss.on("connection", (ws, req) =>
 		ws.send(String(new Date()));
 	}, 1000000);
 
-	login(ws);
+	// login(ws);
 
 	setTimeout(() => {
-		ws.close(1008, "不合法的請求");
+		// ws.close(1008, "不合法的請求");
 	}, 1000);
 
 
@@ -68,7 +68,7 @@ wss.on("connection", (ws, req) =>
 		console.log(data);
 		console.log(count++ + ":" + ws.id + ":server receive message=" + wordarray.toString());
 		//var r=Math.random();
-		ws.send(data + ":" + new Date());
+		// ws.send(data + ":" + new Date());
 	});
 
 	ws.on("close", () =>
