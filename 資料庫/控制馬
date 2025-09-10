@@ -1,0 +1,57 @@
+C0 控制碼 (0x00–0x1F)
+
+這些是早期 ASCII 就有的控制字元：
+
+符號	Hex	名稱	功能
+NUL	0x00	Null	空字元
+BEL	0x07	Bell	發出嗶聲
+BS	0x08	Backspace	游標往左移
+HT	0x09	Horizontal Tab	水平定位（Tab）
+LF	0x0A	Line Feed	換行
+CR	0x0D	Carriage Return	回到行首
+ESC	0x1B	Escape	引入控制序列 (ESC …)
+----
+
+C1 控制碼 (0x80–0x9F)
+
+這一組是 擴展控制字元，在 7-bit 環境下會被模擬成 ESC + 一個字元。
+
+名稱	Hex	ESC 等效	功能
+DCS	0x90	ESC P	Device Control String
+CSI	0x9B	ESC [	控制序列引入
+ST	0x9C	ESC \	String Terminator
+OSC	0x9D	ESC ]	Operating System Command
+PM	0x9E	ESC ^	Privacy Message
+APC	0x9F	ESC _	Application Program Command
+
+重點：
+
+CSI (0x9B) = ESC [ = 常見的 ANSI 控制序列開頭。
+
+例如：ESC [31m = 設定紅色字體。
+-----
+
+CSI (Control Sequence Introducer) 常見指令
+
+CSI = ESC [ (或 0x9B)，後面會跟 參數 + 命令字母。
+
+範例	功能
+ESC [2J	清除整個螢幕
+ESC [K	清除游標到行尾
+ESC [10;5H	游標移到 (row=10, col=5)
+ESC [31m	設定紅色字體
+ESC [0m	Reset (恢復預設顏色)
+ESC [s / ESC [u	儲存/恢復游標位置
+
+-----
+整理重點
+
+C0 → 基本 ASCII 控制碼 (換行、Tab、ESC …)。
+
+C1 → 擴展控制碼，VT100 用 ESC 模擬，例如：
+
+CSI = 0x9B = ESC [
+
+OSC = 0x9D = ESC ]
+
+CSI → 用來包裝複雜的控制序列，常見在顏色、游標控制、清螢幕。

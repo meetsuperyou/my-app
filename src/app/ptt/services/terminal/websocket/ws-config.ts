@@ -13,9 +13,10 @@ interface ItermEnviroment {
 
 export interface WsConfig {
   production: ItermEnviroment;
-  proxyTest1: ItermEnviroment; //
-  proxyTest2: ItermEnviroment;
-  locaWslServer: ItermEnviroment;
+  server1: ItermEnviroment; //
+  server2: ItermEnviroment;
+  pureWsServer: ItermEnviroment;
+  wsProxyServer: ItermEnviroment;
 }
 
 // export type WsConfig = Record<string, TermEnvConfig>;
@@ -24,16 +25,22 @@ export const wsConfig: WsConfig = {
     url: "wss://ws.ptt.cc/bbs", // proxy 轉送， or
     header1: "https://term.ptt.cc",//its origin，要被 firebase 複寫，如果跑 proxy 則無用
   },
-  proxyTest1: {
-    url: "wss://localhost:4200/server1",
+  server1: {
+    url: "http://localhost:4200/server1",  // 透過 proxy, 藥用 http
+    // url: "wss://localhost:4200/server1", // ws 值連
     header1: "https://term.ptt.cc",//its origin
   },
-  proxyTest2: {
-    url: "wss://localhost:4200/server2",
+  server2: {
+    url: "http://localhost:4200/server2",
     header1: "https://term.ptt2.cc",//its origin
   },
-  locaWslServer: {
-    url: "ws://localhost:4200/local",
+  pureWsServer: {
+    url: "http://localhost:4200/pureWsServer",
     header1: "hello local",// 沒有用。因為 proxy.config 寫死
   },
+  wsProxyServer: {
+    url: "http://localhost:4200/wsProxyServer",
+    header1: "hello local",// 沒有用。因為 proxy.config 寫死
+  },
+
 };

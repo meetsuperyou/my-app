@@ -1,0 +1,34 @@
+Unicode	Dec	Hex	符號名	常見縮寫	功能/說明
+U+0000	0	0x00	Null	NUL	空字元，無作用
+U+0001	1	0x01	Start of Heading	SOH	開始標題
+U+0002	2	0x02	Start of Text	STX	開始正文
+U+0003	3	0x03	End of Text	ETX	結束正文
+U+0004	4	0x04	End of Transmission	EOT	傳輸結束
+U+0005	5	0x05	Enquiry	ENQ	查詢，要求回應
+U+0006	6	0x06	Acknowledge	ACK	確認收到
+U+0007	7	0x07	Bell	BEL	🔔「響鈴」(讓終端機嗶一聲)
+U+0008	8	0x08	Backspace	BS	退格
+U+0009	9	0x09	Character Tabulation	HT / TAB	水平定位（Tab）
+U+000A	10	0x0A	Line Feed	LF	換行
+U+000B	11	0x0B	Line Tabulation	VT	垂直定位
+U+000C	12	0x0C	Form Feed	FF	換頁
+U+000D	13	0x0D	Carriage Return	CR	Enter/回車
+U+000E	14	0x0E	Shift Out	SO	切換字集（舊機器用）
+U+000F	15	0x0F	Shift In	SI	切換回字集
+U+0010	16	0x10	Data Link Escape	DLE	數據鏈路逃脫
+U+0011	17	0x11	Device Control 1	DC1	常用作 XON
+U+0012	18	0x12	Device Control 2	DC2	設備控制
+U+0013	19	0x13	Device Control 3	DC3	常用作 XOFF
+U+0014	20	0x14	Device Control 4	DC4	設備控制
+U+0015	21	0x15	Negative Acknowledge	NAK	拒絕、錯誤回應
+U+0016	22	0x16	Synchronous Idle	SYN	空同步
+U+0017	23	0x17	End of Transmission Block	ETB	區塊傳輸結束
+U+0018	24	0x18	Cancel	CAN	取消
+U+0019	25	0x19	End of Medium	EM	媒體結束
+U+001A	26	0x1A	Substitute	SUB	代用（常用來表示錯誤字元）
+U+001B	27	0x1B	Escape	ESC	轉義字元 (VT100 控制序列開頭)
+U+001C	28	0x1C	File Separator	FS	分隔符
+U+001D	29	0x1D	Group Separator	GS	分組符
+U+001E	30	0x1E	Record Separator	RS	記錄符
+U+001F	31	0x1F	Unit Separator	US	單元符
+U+007F	127	0x7F	Delete	DEL	刪除字元

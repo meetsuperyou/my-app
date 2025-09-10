@@ -41,24 +41,25 @@ wss.on("connection", (ws, req) =>
 		ws.send(String(new Date()));
 	}, 1000000);
 
-	login(ws);
+	// login(ws);
 
 	setTimeout(() => {
-		ws.close(1008, "不合法的請求");
+		// ws.close(1008, "不合法的請求");
 	}, 1000);
 
 
 
 	ws.on("open", () => {
 		console.log("open");
+		ws.send('hello');
 	});
 
 
 	ws.on("message", data =>
 	{
 		// ptt chrome 的 資料
-		// 登入 = 181,110,164,74  <Buffer b5 6e a4 4a>
-		// 中文A的 = 164,164,164,229,65,170,186   <Buffer a4 a4 a4 e5>
+		// 登入 = 181,110,164,74  <TermBuffer b5 6e a4 4a>
+		// 中文A的 = 164,164,164,229,65,170,186   <TermBuffer a4 a4 a4 e5>
 		// ctrl u = 21
 		// ctrl v = 22
 		// u = 117

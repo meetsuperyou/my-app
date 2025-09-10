@@ -1,0 +1,40 @@
+📌 VT100 標準 CSI 指令集
+
+（ESC [ 開頭，最後一碼是 Final Byte）
+
+Final Byte	指令名稱	說明
+A	CUU (Cursor Up)	游標上移 n 行（預設 1）。
+B	CUD (Cursor Down)	游標下移 n 行（預設 1）。
+C	CUF (Cursor Forward)	游標右移 n 行（預設 1）。
+D	CUB (Cursor Back)	游標左移 n 行（預設 1）。
+H / f	CUP (Cursor Position)	移動游標到指定的 (row, col)。
+
+J	ED (Erase in Display)	清除螢幕（0=光標到螢幕結尾, 1=螢幕開頭到光標, 2=整個畫面）。J 針對整個 螢幕顯示 (Display)。
+K	EL (Erase in Line)	清除游標所在行（0=游標到行尾, 1=行首到游標, 2=整行）。K 針對目前 游標所在的一行 (Line)
+
+m	SGR (Select Graphic Rendition)	設定文字屬性（顏色、粗體、反白…）。
+s	Save Cursor	儲存游標位置。
+u	Restore Cursor	回復游標位置。
+r	DECSTBM (Set Scroll Region)	設定滾動區域（例如只讓中間幾行能捲動）。
+
+
+--------------
+
+📌 VT220 / ANSI 擴充 CSI 指令
+
+這些在 VT100 沒有，但後來的終端機（VT220、VT320 或 ANSI 標準）支援：
+
+Final Byte	指令名稱	說明
+E	CNL (Cursor Next Line)	游標下移 n 行，並回到行首。
+F	CPL (Cursor Previous Line)	游標上移 n 行，並回到行首。
+G / `	CHA (Cursor Horizontal Absolute)	移動游標到指定的欄位。
+d	VPA (Vertical Position Absolute)	移動游標到指定的列。
+e	CNL (等同於 E)	有些系統用 e 當別名。
+S	SU (Scroll Up)	捲動螢幕 n 行（新行加在底部）。
+T	SD (Scroll Down)	反向捲動 n 行（新行加在頂部）。
+X	ECH (Erase Character)	清除游標右邊 n 個字元。
+Z	CBT (Cursor Backward Tab)	游標左移到前一個 tab stop。
+@	ICH (Insert Character)	插入 n 個空白字元。
+P	DCH (Delete Character)	刪除 n 個字元。
+L	IL (Insert Line)	插入 n 行。
+M	DL (Delete Line)	刪除 n 行。

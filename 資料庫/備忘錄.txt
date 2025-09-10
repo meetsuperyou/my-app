@@ -1,0 +1,14 @@
+ptt chrome ws server
+可以觀察 send and receive
+轉接器
+-----------
+send
+
+TelnetConnection.prototype.convSend
+Websocket.prototype.send
+-------
+send 能不能改成 then ?
+ptt chrome 使用 timeout...
+public receivedMessages: any[] = [];
+ this.receivedMessages.push(message);
+ 或許用 let sending = true;

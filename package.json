@@ -7,7 +7,8 @@
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "server": "nodemon ptt-server/ptt-server.js"
+    "server": "nodemon ptt-server/pure-ws-server.js",
+    "zip": "node zip-project.js"
   },
   "prettier": {
     "printWidth": 100,
@@ -29,6 +30,7 @@
     "@angular/forms": "^20.2.0",
     "@angular/platform-browser": "^20.2.0",
     "@angular/router": "^20.2.0",
+    "archiver": "^7.0.1",
     "cordova-plugin-advanced-websocket": "^1.1.8",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0"
@@ -38,7 +40,10 @@
     "@angular/cli": "^20.2.0",
     "@angular/compiler-cli": "^20.2.0",
     "@types/jasmine": "~5.1.0",
+    "@types/node": "^24.3.1",
+    "@types/ws": "^8.18.1",
     "cordova-plugin-advanced-websocket-types": "^0.0.5",
+    "express": "^5.1.0",
     "jasmine-core": "~5.9.0",
     "karma": "~6.4.0",
     "karma-chrome-launcher": "~3.2.0",
@@ -46,7 +51,6 @@
     "karma-jasmine": "~5.1.0",
     "karma-jasmine-html-reporter": "~2.1.0",
     "typescript": "~5.9.2",
-    "ws": "^8.18.3",
-    "express": "^5.1.0"
+    "ws": "^8.18.3"
   }
 }

@@ -6,7 +6,7 @@ import { WebSocketPlugin } from 'capacitor-websocket-plugin'; // 假設的 plugi
 export class CapacitorWebSocket implements IWebSocket {
   private socketId?: string;
 
-  onOpen?: (event: any) => void;
+  onOpen?: (event: any) => void; // 屬性: function type
   onMessage?: (event: { data: any }) => void;
   onClose?: (event: any) => void;
   onError?: (event: any) => void;

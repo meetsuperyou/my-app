@@ -1,0 +1,65 @@
+在 VT100 / ANSI 控制碼裡，CSI（Control Sequence Introducer, ESC [）並不是單純「不是數字就結束」，它有一個完整的 文法規範。
+
+CSI 結構
+
+一個 CSI 序列長這樣：
+
+CSI Ps ; Ps ; … ; Ps  Final
+
+
+CSI → ESC [ (也就是 \x1b[ )
+
+Ps → 參數 (由數字、分號 ;、可選的問號 ? 開頭組成)
+
+Final → 結尾字元（決定是哪個指令）
+
+判斷完整 CSI 的方法
+
+必須以 Final Byte 結尾
+
+Final Byte = ASCII 0x40–0x7E (@ 到 ~)
+
+常見如：
+
+A → CUU (cursor up)
+
+B → CUD (cursor down)
+
+m → SGR (顏色屬性)
+
+H → CUP (游標定位)
+
+J → ED (清螢幕)
+
+中間只能有 Parameter Bytes 與 Intermediate Bytes
+
+Parameter Bytes = ASCII 0x30–0x3F (0–9 ; < = > ?)
+
+Intermediate Bytes = ASCII 0x20–0x2F（空格和部分符號）
+
+Final Byte 出現後，CSI 就算結束。
+
+舉例
+
+ESC[31m → SGR，設置前景紅色
+
+31 = 參數
+
+m = Final Byte (完整結束)
+
+ESC[2J → 清螢幕
+
+2 = 參數
+
+J = Final Byte
+
+ESC[;H → 游標定位
+
+; = 分隔符
+
+H = Final Byte
+
+✅ 結論
+不是「非數字就結尾」，而是：
+
+當你讀到 0x40–0x7E 的 Final Byte，這個 CSI 才算完整結束。
