@@ -69,7 +69,7 @@ wss.on("connection", (ws, req) =>
 		console.log(data);
 		console.log(count++ + ":" + ws.id + ":server receive message=" + wordarray.toString());
 		//var r=Math.random();
-		ws.send(data + ":" + new Date());
+		// ws.send(data + ":" + new Date());
 	});
 
 	ws.on("close", () =>
