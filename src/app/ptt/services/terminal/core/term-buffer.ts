@@ -1,5 +1,4 @@
-import {BufferConst, BufferScroll, TermCols, TermRows} from "../terminal-constants";
-import {IwebSocket} from "../websocket/I-Ws";
+import {TermCols, TermRows} from "../terminal-constants";
 import {Cell, SgrAttributes, SgrColorBg, SgrColorFg} from "./buffer-model";
 
 const DEFAULT_ATTRIBUTES: SgrAttributes =
@@ -9,11 +8,6 @@ const DEFAULT_ATTRIBUTES: SgrAttributes =
           bright: false, blink: false, underline: false,
           inverse: false, isLeadByte: false
         };
-const DEFAULT_CELL: Cell = {
-  char: " ", attrs: {
-    ...DEFAULT_ATTRIBUTES,
-  }
-};
 
 export class TermBuffer
 {
@@ -27,7 +21,7 @@ export class TermBuffer
   scrollBottom = TermRows - 1;
   buffer: Cell[][] = Array.from({length: this.rows}, () =>
           Array.from({length: this.cols}, () => this.createDefaultCell()));
-  currentSgrAttribute: Cell = this.createDefaultCell();
+  currentSgrAttribute: SgrAttributes = this.createDefaultCell().attrs;
 
   constructor()
   {
@@ -88,7 +82,7 @@ export class TermBuffer
 
   // true 向上滾動，buffer data 往下移動，上面行出現文章前段
   // false向下滾動，buffer data 往上移動，下面行出現文章後段
-  scroll(bufferScrollDirection: boolean, scrollLineNumber: number, caller: string)
+  scroll(bufferScrollDirection: boolean, scrollLineNumber: number, _caller: string)
   {
     let scrollTop = this.scrollTop; // 0
     let scrollBottom = this.scrollBottom; // 23
@@ -191,14 +185,66 @@ export class TermBuffer
   {
     let _rows = this.buffer.map(row => row.map(cell => cell.char).join(""));
     let rows = JSON.stringify(_rows, null, 2);
-    const all = JSON.stringify(this.buffer, null, 2);
+    // const all = JSON.stringify(this.buffer, null, 2);
     let result = rows;
     return result;
     // 第二個參數 null, 第三個參數 2 → 美化縮排，方便看
   }
 
-  putText(text: string)
+  putText(str: string): void
   {
+    if (!str)
+      return;
+    let cols = this.cols;
+    // let rows = this.rows;
+    // let lines = this.buffer;
+    let n = str.length;
+    let line = this.buffer[this.cursor_y];
+    for (let i = 0; i < n; ++i)
+    {
+      let ch = str[i];
+      switch (ch)
+      {
+        case "\x07":
+          // FIX ME: beep (1)Sound (2)AlertNotification (3)change icon
+          // should only play sound
+          continue;
+        case "\b":
+          // console.log(`不會有back 吧`); 結果有
+          this.back();
+          continue;
+        case "\r":
+          this.carriageReturn();
+          continue;
+        case "\n":
+        case "\f":
+        case "\v":
+          this.lineFeed();
+          line = this.buffer[this.cursor_y];
+          continue;
+        case "\0":
+          continue;
+      }
+      //if( ch < ' ')
+      //    //dump('Unhandled invisible char' + ch.charCodeAt(0)+ '\n');
+      if (this.cursor_x >= cols)
+      {
+        // next line
+        this.lineFeed();
+        this.cursor_x = 0;
+        line = this.buffer[this.cursor_y];
+      }
+      switch (ch)
+      {
+        case "\t":
+          this.tab(1);
+          break;
+        default:
+          // let cell = line[this.cursor_x]; // 資料是 term char, 2 char = 1 中文
+          line[this.cursor_x] = {attrs: {...this.currentSgrAttribute}, char: ch};
+          ++this.cursor_x;
+      }
+    }
   }
 
   moveCursorXY(cursorX: number, cursorY: number)
@@ -229,10 +275,6 @@ export class TermBuffer
     this.cursor_y = this.save_cursor_y;
   }
 
-  eraseScreen(p: any)
-  {
-  }
-
   eraseLine(param: number)// 清除游標所在行（0=游標到行尾, 1=行首到游標, 2=整行）
   {
     let line = this.buffer[this.cursor_y];
@@ -246,7 +288,7 @@ export class TermBuffer
         }
         break;
       case 1: //erase to left
-        var cursor_x = this.cursor_x;
+        let cursor_x = this.cursor_x;
         for (let col = 0; col < cursor_x; ++col)
         {
           line[col] = this.createDefaultCell();
@@ -261,16 +303,55 @@ export class TermBuffer
     }
   }
 
-  insertLine(p: any)
+  insertLine(param: number)
   {
+    let scrollTop = this.scrollTop;
+    if (this.cursor_y < this.scrollBottom)
+    {
+      this.scrollTop = this.cursor_y;
+      this.scroll(true, param, "insertLine");
+    }
+    this.scrollTop = scrollTop;
   }
 
-  deleteLine(p: any)
+  deleteLine(param: number)
   {
+    let scrollTop = this.scrollTop;
+    this.scrollTop = this.cursor_y;
+    this.scroll(false, param, "deleteLine");
+    this.scrollTop = scrollTop;
   }
 
-  deleteChars(p: any)
+  deleteChars(param: number)
   {
+    let line = this.buffer[this.cursor_y];
+    let cols = this.cols;
+    let cursor_x = this.cursor_x;
+    if (cursor_x > 0 && line[cursor_x - 1].attrs.isLeadByte)
+      ++cursor_x;
+    if (cursor_x == cols)
+      return;
+    if (cursor_x + param >= cols)
+    {
+      for (let col = cursor_x; col < cols; ++col)
+      {
+        line[col] = this.createDefaultCell();
+      }
+    }
+    else
+    {
+      let n = cols - cursor_x - param;
+      while (--n >= 0)
+      {
+        let tailCell = line.pop();
+        if (tailCell !== undefined)
+        {
+          line.splice(cursor_x, 0, tailCell);
+        }
+      }
+      for (let col = cols - param; col < cols; ++col)
+        line[col] = this.createDefaultCell();
+    }
   }
 
   insert(param: number) // 插入空白字元，不能是其他字元
@@ -303,20 +384,38 @@ export class TermBuffer
     }
   }
 
-  eraseChars(p: any)
+  eraseChars(param: number)
   {
+    let line = this.buffer[this.cursor_y];
+    let cols = this.cols;
+    let cursor_x = this.cursor_x;
+    if (cursor_x > 0 && line[cursor_x - 1].attrs.isLeadByte)
+      ++cursor_x;
+    if (cursor_x == cols)
+      return;
+    let n = (cursor_x + param > cols) ? cols : cursor_x + param;
+    for (let col = cursor_x; col < n; ++col)
+    {
+      line[col] = this.createDefaultCell();
+    }
   }
 
-  setScrollRegion(number: number, number2: number)
+  setScrollRegion(params: number[])
   {
-  }
-
-  scrollUp(p: any)
-  {
-  }
-
-  scrollDown(p: any)
-  {
+    if (params.length < 2)
+    {
+      this.scrollTop = 0;
+      this.scrollBottom = this.rows - 1;
+    }
+    else
+    {
+      if (params[0] > 0)
+        --params[0];
+      if (params[1] > 0)
+        --params[1];
+      this.scrollTop = params[0];
+      this.scrollBottom = params[1];
+    }
   }
 
   applySGR(params: number[])
@@ -327,33 +426,33 @@ export class TermBuffer
       {
         case 0: // reset
           // this.resetAttr();
-          this.currentSgrAttribute = this.createDefaultCell();
+          this.currentSgrAttribute = this.createDefaultCell().attrs;
           break;
         case 1: // bright
           // this.bright = true;
-          this.currentSgrAttribute.attrs.bright = true;
+          this.currentSgrAttribute.bright = true;
           break;
         case 4:
           // this.underLine = true;
-          this.currentSgrAttribute.attrs.underline = true;
+          this.currentSgrAttribute.underline = true;
           break;
         case 5: // blink
         case 6:
           // this.blink = true;
-          this.currentSgrAttribute.attrs.blink = true;
+          this.currentSgrAttribute.blink = true;
           break;
         case 7: // invert
           // this.invert = true;
-          this.currentSgrAttribute.attrs.inverse = true;
+          this.currentSgrAttribute.inverse = true;
           break;
         case 8:
           // invisible is not supported
           break;
         default:
           if (val >= 30 && val <= 37)
-            this.currentSgrAttribute.attrs.fg = val as SgrColorFg;
+            this.currentSgrAttribute.fg = val as SgrColorFg;
           else if (val >= 40 && val <= 47)
-            this.currentSgrAttribute.attrs.bg = val as SgrColorBg;
+            this.currentSgrAttribute.bg = val as SgrColorBg;
           break;
       }
     });
@@ -427,5 +526,23 @@ export class TermBuffer
       this.cursor_x += 4 * (param - 1);
     if (this.cursor_x >= this.cols)
       this.cursor_x = this.cols - 1;
+  }
+
+  backTab(param: number)
+  {
+    let mod = this.cursor_x % 4;
+    this.cursor_x -= (mod > 0 ? mod : 4);
+    if (param > 1)
+      this.cursor_x -= 4 * (param - 1);
+    if (this.cursor_x < 0)
+      this.cursor_x = 0;
+  }
+
+  private back()
+  {
+    if (this.cursor_x > 0)
+    {
+      --this.cursor_x;
+    }
   }
 }

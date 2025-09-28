@@ -1,4 +1,3 @@
-
 import {TermBuffer} from "./term-buffer";
 
 const enum ParserState
@@ -16,7 +15,6 @@ export class BufferParser
   private state: ParserState = ParserState.TEXT;
   private textBuffer: string = "";
   private paramsBuffer: string = "";
-  private firstChar = "";
 
   constructor(private termBuffer: TermBuffer)
   {
@@ -36,13 +34,12 @@ export class BufferParser
           this.handleTextState(char);
           break;
         case ParserState.ESC:
-          if (char === "[")
-          { // esc 後面一定是 [，下一個字就是 csi
+          if (char === "[") // esc 後面一定是 [，下一個字就是 csi
+          {
             this.state = ParserState.CSI;
           }
-          else
+          else // 處理 ESC 後面不是 '[' 的情況，這個字就是 c1
           {
-            // 處理 ESC 後面不是 '[' 的情況，這個字就是 c1
             this.state = ParserState.C1;
             index--;
           }
@@ -54,7 +51,7 @@ export class BufferParser
           let C1_End = true;
           let C1_Char = [" ", "#", "%", "(", ")", "*", "+", "-", ".", "/"];
           if (this.paramsBuffer)  // 一開始是沒有 escPara的，因為前一個符號是 *esc
-          { // multi-char is not supported now
+          { // multi-char is not supported now, parambuffer 全找出來，然後清掉不處理
             for (let j = 0; j < C1_Char.length; ++j)
             {
               if (this.paramsBuffer === C1_Char[j]) // c1-char 代表後面還有字元
@@ -99,7 +96,7 @@ export class BufferParser
               C1_End = false;
           } // end switch(char)
           console.log(`\n\n\nptt 有 C1 ?ch:${char},para:${this.paramsBuffer}  \n\n\n`);
-          if (!C1_End)
+          if (!C1_End) // 先不要清空 para-buffer, 繼續找出 multi-para
             break;
           this.paramsBuffer = "";
           this.state = ParserState.TEXT;
@@ -118,8 +115,6 @@ export class BufferParser
     {
       this.processCsiCommand(finalByte, this.termBuffer);// 只有處理 switch
       // 無論 processCsiCommand 成功或失敗，都清空 paramsBuffer
-      this.state = ParserState.TEXT;
-      this.paramsBuffer = "";
     }
     else
     {
@@ -207,41 +202,41 @@ export class BufferParser
         // console.log(0 || 42);        // 42  (因為 0 是 falsy)
         // 一個? 號 。如果 params 存在（不是 null / undefined / false）
         break;
+      case "L": // 插入 n 行。
+        this.termBuffer.insertLine(params[0] > 0 ? params[0] : 1);
+        break;
+      case "M": // 刪除 n 行。
+        this.termBuffer.deleteLine(params[0] > 0 ? params[0] : 1);
+        break;
+      case "P": // 刪除 n 個字元。
+        this.termBuffer.deleteChars(params[0] > 0 ? params[0] : 1);
+        break;
+      case "r": // 設定滾動區域（例如只讓中間幾行能捲動）。
+        this.termBuffer.setScrollRegion(params);
+        break; // p1: top, p2: bottom
       case "s":// 儲存游標位置。
         this.termBuffer.saveCursorPosition();
         break;
       case "u": // 回復游標位置。
         this.termBuffer.restoreCursorPosition();
         break;
-
-            // --- 擦除與刪除 ---
-      case "L": // 插入 n 行。
-        // this.termBuffer.insertLine(p(0));
-        break;
-      case "M": // 刪除 n 行。
-        // this.termBuffer.deleteLine(p(0));
-        break;
-      case "P": // 刪除 n 個字元。
-        // this.termBuffer.deleteChars(p(0));
-        break;
-      case "X": // 清除游標右邊 n 個字元。
-        // this.termBuffer.eraseChars(p(0));
-        break;
-
-            // --- 捲動 ---
-      case "r": // 設定滾動區域（例如只讓中間幾行能捲動）。
-        // this.termBuffer.setScrollRegion(p(0, 1) - 1, p(1, 0) - 1);
-        break; // p1: top, p2: bottom
       case "S": // 捲動螢幕 n 行（新行加在底部）
-        // this.termBuffer.scrollUp(p(0));
+        this.termBuffer.scroll(false, (params[0] > 0 ? params[0] : 1), "csi-S");
         break;
       case "T": //反向捲動 n 行（新行加在頂部）。
-        // this.termBuffer.scrollDown(p(0));
+        this.termBuffer.scroll(true, (params[0] > 0 ? params[0] : 1), "csi-T");
         break;
-            // --- SGR (圖形渲染) ---
+      case "X": // 清除游標右邊 n 個字元。
+        this.termBuffer.eraseChars(params[0] > 0 ? params[0] : 1);
+        break;
+      case "Z":
+        term.backTab(params[0] > 0 ? params[0] : 1);
+        break;
       default:
         console.warn(`Unsupported CSI command: '${finalByte}' with params: [${params.join(",")}]`);
     }
+    this.state = ParserState.TEXT;
+    this.paramsBuffer = "";
   }
 
   private handleTextState(char: string): void
@@ -288,6 +283,7 @@ export class BufferParser
   {
     if (this.textBuffer)
     {
+
       this.termBuffer.putText(this.textBuffer);
       this.textBuffer = "";
     }
