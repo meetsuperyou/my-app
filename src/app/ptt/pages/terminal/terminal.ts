@@ -1,7 +1,6 @@
 import {CommonModule} from "@angular/common";
 import { Component } from '@angular/core';
-import {Observable} from "rxjs";
-import {Cell} from "../../services/terminal/core/buffer-model";
+
 
 @Component({
   selector: 'terminal',
