@@ -1,0 +1,23 @@
+<!--
+<div class="terminal-container" *ngIf="state$ | async as state">
+
+    <div class="term-row" *ngFor="let row of state.grid; let y = index">
+
+        <div
+            class="term-cell"
+            *ngFor="let cell of row; let x = index"
+
+            [ngClass]="{
+        'bold': cell.attrs.bold,
+        'italic': cell.attrs.italic,
+        'underline': cell.attrs.underline,
+        'cursor': state.cursor.x === x && state.cursor.y === y
+      }"
+
+            [ngStyle]="getCellStyle(cell.attrs)"
+        >
+            {{ cell.char === '' ? ' ' : cell.char }}
+        </div>
+    </div>
+</div>
+-->
