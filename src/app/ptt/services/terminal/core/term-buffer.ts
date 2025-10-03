@@ -1,12 +1,13 @@
 import {TermCols, TermRows} from "../terminal-constants";
+import {TestUtils} from "../test/testUtils";
 import {Cell, SgrAttributes, SgrColorBg, SgrColorFg} from "./buffer-model";
 
 const DEFAULT_ATTRIBUTES: SgrAttributes =
         {
           fg: SgrColorFg._37_LightGray,
           bg: SgrColorBg._40_Black,
-          bright: false, blink: false, underline: false,
-          inverse: false, isLeadByte: false
+          bright: false, blink: false, underLine: false,
+          inverse: false, isLeadByte: false, sgrReset: 0
         };
 
 export class TermBuffer
@@ -21,9 +22,9 @@ export class TermBuffer
   scrollBottom = TermRows - 1;
   buffer: Cell[][] = Array.from({length: this.rows}, () =>
           Array.from({length: this.cols}, () => this.createDefaultCell()));
-  currentSgrAttribute: SgrAttributes = this.createDefaultCell().attrs;
+  templateSgrAttribute: SgrAttributes = {...DEFAULT_ATTRIBUTES};
 
-  constructor()
+  constructor(private testUtils: TestUtils)
   {
     /**
      this.lines = new Array(this.rows);
@@ -92,7 +93,7 @@ export class TermBuffer
       if (scrollBottom < 1)
         scrollBottom = this.rows - 1;
     }
-    if (scrollLineNumber >= this.rows) // scroll more than 1 page = 清除全螢幕
+    if (scrollLineNumber >= this.rows) // scroll more than 1 pages = 清除全螢幕
       this.clear(2);
     else if (scrollLineNumber >= scrollBottom - scrollTop + 1) // number>=24
     {
@@ -172,7 +173,7 @@ export class TermBuffer
     }
   }
 
-  private createDefaultCell(): Cell
+  public createDefaultCell(): Cell
   {
     // 每次都回傳新的 Cell
     return {
@@ -195,9 +196,9 @@ export class TermBuffer
   {
     if (!str)
       return;
+    // console.log(`puts\n`);
+    // this.testUtils.visualizeChar(str, false);
     let cols = this.cols;
-    // let rows = this.rows;
-    // let lines = this.buffer;
     let n = str.length;
     let line = this.buffer[this.cursor_y];
     for (let i = 0; i < n; ++i)
@@ -241,7 +242,7 @@ export class TermBuffer
           break;
         default:
           // let cell = line[this.cursor_x]; // 資料是 term char, 2 char = 1 中文
-          line[this.cursor_x] = {attrs: {...this.currentSgrAttribute}, char: ch};
+          line[this.cursor_x] = {attrs: {...this.templateSgrAttribute}, char: ch};
           ++this.cursor_x;
       }
     }
@@ -418,41 +419,62 @@ export class TermBuffer
     }
   }
 
-  applySGR(params: number[])
+  applySgrTemplate(params: number[])
   {
+    // xxx
+    // 31;42m   or 32;0m;不可能  0m 不會帶參數
+    // this.templateSgrAttribute.sgrReset = false;
     params.forEach(val =>
     {
       switch (val)
       {
-        case 0: // reset
+        case 0: // reset，問題在於，沒有人會把 reset 改成 un-reset. 所以 true/false 沒意義
           // this.resetAttr();
-          this.currentSgrAttribute = this.createDefaultCell().attrs;
+          // template 只有一個，一值加上去是可以的
+          let counterSgrReset = ++this.templateSgrAttribute.sgrReset;
+          this.templateSgrAttribute = {...DEFAULT_ATTRIBUTES};
+          // console.log(`reset 出現`);
+          this.templateSgrAttribute.sgrReset = counterSgrReset;
+          // let a = params.join(";");
+          // console.log(`0m 的參數是:${a},sgr=${this.templateSgrAttribute.sgrReset}`);
           break;
         case 1: // bright
           // this.bright = true;
-          this.currentSgrAttribute.bright = true;
+          this.templateSgrAttribute.bright = true;
           break;
         case 4:
           // this.underLine = true;
-          this.currentSgrAttribute.underline = true;
+          this.templateSgrAttribute.underLine = true;
           break;
         case 5: // blink
         case 6:
           // this.blink = true;
-          this.currentSgrAttribute.blink = true;
+          this.templateSgrAttribute.blink = true;
           break;
         case 7: // invert
           // this.invert = true;
-          this.currentSgrAttribute.inverse = true;
+          this.templateSgrAttribute.inverse = true;
           break;
         case 8:
           // invisible is not supported
           break;
+        case 22: // normal, or not bright
+          // this.templateSgrAttribute.bright = false;
+          break;
+        case 24: // not underlined
+          // this.templateSgrAttribute.underline = false;
+          break;
+        case 25: // steady, or not blink
+          // this.templateSgrAttribute.blink = false;
+          break;
+        case 27: // positive, or not invert
+          // this.templateSgrAttribute.inverse = false;
+          break;
         default:
           if (val >= 30 && val <= 37)
-            this.currentSgrAttribute.fg = val as SgrColorFg;
+            this.templateSgrAttribute.fg = val as SgrColorFg;
           else if (val >= 40 && val <= 47)
-            this.currentSgrAttribute.bg = val as SgrColorBg;
+            this.templateSgrAttribute.bg = val as SgrColorBg;
           break;
       }
     });

@@ -8,7 +8,8 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "server": "nodemon ptt-server/pure-ws-server.js",
-    "zip": "node zip-project.js"
+    "zip": "node zip-project.js",
+    "compare": "node ptt-server/compare.js ptt-server/ptt.txt ptt-server/myapp.txt"
   },
   "prettier": {
     "printWidth": 100,
@@ -43,6 +44,7 @@
     "@types/node": "^24.3.1",
     "@types/ws": "^8.18.1",
     "cordova-plugin-advanced-websocket-types": "^0.0.5",
+    "diff": "^8.0.2",
     "express": "^5.1.0",
     "jasmine-core": "~5.9.0",
     "karma": "~6.4.0",

@@ -1,6 +1,7 @@
 import {TermCols, TermRows} from "../terminal-constants";
+import {TestUtils} from "../test/testUtils";
 import {IwebSocket} from "../websocket/I-Ws";
-import {BufferParser} from "./buffer-parser";
+import {ParserBuffer} from "./parser-buffer";
 
 const enum Command
 {
@@ -43,12 +44,12 @@ const enum TelnetState
 }
 
 
-export class talnetParser
+export class ParserTalnet
 {
   private state: TelnetState = TelnetState.DATA;
   private subNegotiationBuffer = "";
   private termType = "VT100";
-  // private termBufferParser: BufferParser;
+  // private termBufferParser: ParserBuffer;
   private readonly myTermTypeCmd = Command.IAC + Command.SB
           + Command.TERM_TYPE + Command.IS + this.termType
           + Command.IAC + Command.SE;
@@ -56,12 +57,14 @@ export class talnetParser
           + String.fromCharCode(0, TermCols, 0, TermRows)
           + Command.IAC + Command.SE;
 
-  constructor(private ws: IwebSocket, private termBufferParser: BufferParser)
+  constructor(private ws: IwebSocket, private termBufferParser: ParserBuffer, private testUtils:TestUtils)
   {
   }
 
   public parseTalnet(chunk: string)
   {
+    // this.testUtils.visualizeChar(chunk); // 不准，這裡大家都是一樣的。
+
     if (chunk.length > 0)
     {
       let dataBuffer = "";

@@ -1,0 +1,7 @@
+測錯了， talnet onmessage 一定是相同的。
+
+我要測的是 buffer.  所以要把 buffer 印出來
+
+可以測的是，ansiparser 處理過後，傳給 onmessage 的 buffer 是否正確。
+
+還有 puts 可以測

@@ -1,7 +1,10 @@
 import {inject, Injectable} from "@angular/core";
 import {Subject} from "rxjs";
-import {talnetParser} from "./core/talnet-parser";
-import {BufferParser} from "./core/buffer-parser";
+import {environment} from "../../../../environments/environment";
+import {ParserTalnet} from "./core/parser-talnet";
+import {ParserBuffer} from "./core/parser-buffer";
+import {ProductTestUtils} from "./test/product-testUtil";
+import {TestUtils} from "./test/testUtils";
 import {BrowserWebSocket} from "./websocket/browser-websocket";
 import {IwebSocket} from "./websocket/I-Ws";
 import {TermBuffer} from "./core/term-buffer";
@@ -12,24 +15,29 @@ import {TermBuffer} from "./core/term-buffer";
 export class Terminal
 {
   termBuffer: TermBuffer;
-  talnetParser: talnetParser;
-  termBufferParser: BufferParser;
+  talnetParser: ParserTalnet;
+  termBufferParser: ParserBuffer;
+  testUtils: TestUtils;
   private destroy$ = new Subject<void>();
   private ws: IwebSocket = inject(BrowserWebSocket);
 
   constructor()
   {
     // DI: module, component , root, 我只好在最高的 gemini-terminal 控制 buffer 的可見性
-    this.termBuffer = new TermBuffer();
-    this.termBufferParser = new BufferParser(this.termBuffer);
-    this.talnetParser = new talnetParser(this.ws,this.termBufferParser);
-     this.tempTest();
+
+    if (environment.production)
+      this.testUtils = new ProductTestUtils();
+    else
+      this.testUtils = new TestUtils();
+    this.termBuffer = new TermBuffer(this.testUtils);
+    this.termBufferParser = new ParserBuffer(this.termBuffer, this.testUtils);
+    this.talnetParser = new ParserTalnet(this.ws, this.termBufferParser, this.testUtils);
+    this.tempTest();
   }
+
   parse(chunk: string)
   {
-
   }
-
 
   tempTest()
   {

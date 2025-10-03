@@ -1,3 +1,4 @@
+import {TestUtils} from "../test/testUtils";
 import {TermBuffer} from "./term-buffer";
 
 const enum ParserState
@@ -10,19 +11,21 @@ const enum ParserState
 
 const ESC = "\x1b";
 
-export class BufferParser
+export class ParserBuffer
 {
   private state: ParserState = ParserState.TEXT;
   private textBuffer: string = "";
   private paramsBuffer: string = "";
 
-  constructor(private termBuffer: TermBuffer)
+  constructor(private termBuffer: TermBuffer, private testUtilities: TestUtils)
   {
   }
 
   // this.parser.feed(data);
   parseTermBufferData(data: string)
   {
+    // console.log(`talnet 過濾之後的資料\n`);
+    // this.testUtilities.visualizeChar(data, false);
     this.textBuffer = "";
     let dataLength = data.length;
     for (let index = 0; index < dataLength; ++index)
@@ -104,6 +107,7 @@ export class BufferParser
       } //  switch (this.state)
     } // end for
     this.flushTextBuffer();// 處理迴圈結束後剩餘的純文字
+    this.testUtilities.logBuffer(this.termBuffer);
   }
 
   private handleCsiState(finalByte: string): void
@@ -138,8 +142,8 @@ export class BufferParser
     let params: number[] = params1.map(p => parseInt(p, 10) || 0);// array 的 空字串補0
     switch (finalByte)
     {
-      case "m":
-        this.termBuffer.applySGR(params);
+      case "m": // 設定字型樣式，例如顏色、粗體、底線、反白等
+        this.termBuffer.applySgrTemplate(params);
         break;
       case "@": // 插入 n 個空白字元。
         this.termBuffer.insert(params[0] > 0 ? params[0] : 1);
@@ -265,14 +269,14 @@ export class BufferParser
         this.termBuffer.restoreCursorPosition();
         break;
       case "D": // Index
-        this.termBuffer.scrollDown(1);
+        this.termBuffer.scroll(false, 1, "c1-D");
         break;
       case "E": // Next Line
         // this.termBuffer.setCursorX(0);
         this.termBuffer.moveCursorXY(0, 1);
         break;
       case "M": // Reverse Index
-        this.termBuffer.scrollUp(1);
+        this.termBuffer.scroll(true, 1, "c1-M");
         break;
     }
     // C1 控制碼通常只有一個字元，處理完就回到 TEXT 狀態
@@ -283,7 +287,6 @@ export class BufferParser
   {
     if (this.textBuffer)
     {
-
       this.termBuffer.putText(this.textBuffer);
       this.textBuffer = "";
     }

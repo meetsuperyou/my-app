@@ -1,12 +1,12 @@
 import {Component, OnDestroy, signal} from "@angular/core";
 import {CommonModule} from "@angular/common";
 import {Subject} from "rxjs";
-import {Vt100BufferComponent2} from "../../temp/grok-terminal/vt100-buffer.component2";
+import {ClassicTerminal} from "../pages/classic-terminal/classic-terminal";
 import {Terminal} from "../services/terminal/terminal";
 
 @Component({
   selector: "ptt-test",
-  imports: [CommonModule, Vt100BufferComponent2],
+  imports: [CommonModule, ClassicTerminal],
   templateUrl: "./ptt-test.html",
   styleUrl: "./ptt-test.scss"
 })

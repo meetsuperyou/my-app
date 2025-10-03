@@ -1,94 +1,86 @@
-//https://stackoverflow.com/questions/13364243/websocketserver-node-js-how-to-differentiate-clients
-//https://medium.com/enjoy-life-enjoy-coding/javascript-websocket-%E8%AE%93%E5%89%8D%E5%BE%8C%E7%AB%AF%E6%B2%92%E6%9C%89%E8%B7%9D%E9%9B%A2-34536c333e1b
+import express from "express";
+import { Server as WebSocketServer, WebSocket } from "ws";
+import { pttmockdata4 } from "./ptt-data.js";
 
-//import express 和 ws 套件
-// eslint-disable-next-line @typescript-eslint/no-var-requires,no-undef
-const express = require("express");
-const {pttmockdata1, pttmockdata4} = require("./ptt-data");
-// eslint-disable-next-line @typescript-eslint/no-var-requires,no-undef
-const SocketServer = require("ws").Server;
+// Configuration
+const DEFAULT_PORT = Number(process.env.PORT) || 3002;
+const HEARTBEAT_MS = 30_000; // send server time every 30s
 
-//指定開啟的 port
-const PORT = 3002;
-
-//創建 express 的物件，並綁定及監聽 3000 port ，且設定開啟後在 console 中提示
-const server = express()
-	.listen(PORT, () => console.log(`Listening on ${PORT}`));
-
-//將 express 交給 SocketServer 開啟 WebSocket 的服務
-const wss = new SocketServer({
-	server
+// Server bootstrap
+const app = express();
+const httpServer = app.listen(DEFAULT_PORT, () => {
+	console.log(`Listening on ${DEFAULT_PORT}`);
 });
+const wsServer = new WebSocketServer({ server: httpServer });
 
-//當 WebSocket 從外部連結時執行
-let  count = 0;
-wss.on("connection", (ws, req) =>
-{
-	ws.id = req.headers["sec-websocket-key"];
-	console.log("\n" + count++ + ":" + ws.id + ":Connected");
-
+// Utilities
+function logRequestHeaders(req) {
+	const key = req.headers["sec-websocket-key"];
 	const origin = req.headers["origin"];
-	console.log("origin:", origin);
-	// myheader
 	const myheader = req.headers["myheader"];
-	console.log("myheader:", myheader);
-
 	const connection = req.headers["connection"];
+	console.log("origin:", origin);
+	console.log("myheader:", myheader);
 	console.log("connection:", connection);
-	//固定送最新時間給 Client
-	const sendNowTime = setInterval(() =>
-	{
-		ws.send(String(new Date()));
-	}, 1000000);
+	return key;
+}
 
-	// login(ws);
+function safeSend(ws, data) {
+	if (ws.readyState === WebSocket.OPEN) {
+		ws.send(data);
+	}
+}
 
-	setTimeout(() => {
-		// ws.close(1008, "不合法的請求");
-	}, 1000);
+function toUint8ArrayFromHex(hexString) {
+	const hexArray = hexString.trim().split(/\s+/);
+	const bytes = hexArray.map((b) => parseInt(b, 16));
+	return new Uint8Array(bytes);
+}
 
+// Handlers
+let connectionCount = 0;
 
+wsServer.on("connection", (ws, req) => {
+	// Attach an id from header for tracing
+	// eslint-disable-next-line no-param-reassign
+	ws.id = logRequestHeaders(req);
+	console.log(`\n${connectionCount++}:${ws.id}:Connected`);
+
+	// Periodic heartbeat: send server time
+	const heartbeatTimer = setInterval(() => {
+		safeSend(ws, new Date().toISOString());
+	}, HEARTBEAT_MS);
+
+	// Optional: delayed close example (disabled)
+	// setTimeout(() => ws.close(1008, "不合法的請求"), 1000);
 
 	ws.on("open", () => {
 		console.log("open");
-		ws.send('hello');
+		safeSend(ws, "hello");
 	});
 
-
-	ws.on("message", data =>
-	{
-		// ptt chrome 的 資料
-		// 登入 = 181,110,164,74  <TermBuffer b5 6e a4 4a>
-		// 中文A的 = 164,164,164,229,65,170,186   <TermBuffer a4 a4 a4 e5>
-		// ctrl u = 21
-		// ctrl v = 22
-		// u = 117
-
-		let wordarray = new Uint8Array(data);
-		console.log(`${data}`);
+	ws.on("message", (data) => {
+		const payloadBytes = data instanceof Buffer ? new Uint8Array(data) : new Uint8Array();
+		console.log(String(data));
 		console.log(data);
-		console.log(count++ + ":" + ws.id + ":server receive message=" + wordarray.toString());
-		//var r=Math.random();
-		// ws.send(data + ":" + new Date());
+		console.log(`${connectionCount++}:${ws.id}:server receive message=${payloadBytes.toString()}`);
+		// echo or process...
+		// safeSend(ws, `${String(data)}:${new Date().toISOString()}`);
 	});
 
-	ws.on("close", () =>
-	{
-		//連線中斷時停止 setInterval
-		clearInterval(sendNowTime);
-		console.log("" + count++ + ":" + ws.id + ":Closed");
+	ws.on("close", () => {
+		clearInterval(heartbeatTimer);
+		console.log(`${connectionCount++}:${ws.id}:Closed`);
 	});
+
+	// Example login seed (binary)
+	function login(targetWs) {
+		// eslint-disable-next-line no-param-reassign
+		targetWs.binaryType = "arraybuffer";
+		safeSend(targetWs, pttmockdata4);
+	}
+	// login(ws);
 });
 
-function login(ws) {
-	ws.binaryType = "arraybuffer";
-	ws.send(pttmockdata4);// watch
-}
-
-
-function hexStringToUint8Array(hexString) {
-	// 去掉多餘空白，分割成兩兩一組
-	const hexArray = hexString.trim().split(/\s+/);
-	const bytes = hexArray.map(b => parseInt(b, 16));
-	return new Uint8Array(bytes);
-}
+// Export utilities for potential reuse/tests
+export { toUint8ArrayFromHex as hexStringToUint8Array };

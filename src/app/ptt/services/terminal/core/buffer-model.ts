@@ -10,6 +10,7 @@ export enum SgrColorFg
   _35_Magenta = 35, // 洋紅/紫色
   _36_Cyan = 36, // 青色
   _37_LightGray = 37, //淺灰
+  _100_undefined = 100, // for test utils
 }
 
 export enum SgrColorBg
@@ -22,6 +23,7 @@ export enum SgrColorBg
   _45_Magenta = 45, // 洋紅/紫色
   _46_Cyan = 46, // 青色
   _47_LightGray = 47, //淺灰
+  _110_undefined = 110, // for test utils
 }
 
 export interface Cell
@@ -37,6 +39,7 @@ export interface SgrAttributes
   bright: boolean;
   inverse: boolean;
   blink: boolean;
-  underline: boolean;
+  underLine: boolean;
   isLeadByte: boolean;
+  sgrReset: number;
 }

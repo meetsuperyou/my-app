@@ -33,7 +33,10 @@ function zipProject(outputFile) {
 			"*.zip",
 			"資料庫/**",
 			"distGemini/**",
-			"src/app/temp/**"
+			"src/app/temp/**",
+			".angular",
+			".vscode",
+			".idea"
 		]
 	});
 
